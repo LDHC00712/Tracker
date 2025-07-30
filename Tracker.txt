@@ -1,9 +1,16 @@
+-- // ✅ CONFIG ==============================
+local CONFIG = {
+    WebhookURL = "https://08cb8c04f339.ngrok-free.app/track", -- แก้ URL webhook ที่นี่
+    UpdateInterval = 60, -- หน่วยเป็นวินาที (เช่น ส่งทุก 60 วินาที)
+    FarmInterval = 600, -- ระยะเวลาเช็ค farm 10 นาที = 600 วินาที
+    FarmThreshold = 10000, -- ฟาร์มขั้นต่ำในช่วง 10 นาที เพื่อถือว่า "✅"
+}
+-- // =======================================
+
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local MarketplaceService = game:GetService("MarketplaceService")
 local LocalPlayer = Players.LocalPlayer
-
-local webhookUrl = "https://08cb8c04f339.ngrok-free.app/track"
 
 local function getCash()
     local cash = 0
@@ -29,14 +36,15 @@ local function sendUpdate()
     local currentCash = getCash()
     local now = os.time()
 
-    if now - last10Min >= 600 then
+    -- อัปเดตค่าล่าสุดทุก CONFIG.FarmInterval วินาที
+    if now - last10Min >= CONFIG.FarmInterval then
         cash10MinAgo = currentCash
         last10Min = now
     end
 
     local earnedCash = currentCash - initialCash
     local gain10Min = currentCash - cash10MinAgo
-    local farmStatus = (gain10Min >= 10000) and "✅" or "❌"
+    local farmStatus = (gain10Min >= CONFIG.FarmThreshold) and "✅" or "❌"
 
     local data = {
         name = altName,
@@ -53,13 +61,13 @@ local function sendUpdate()
     pcall(function()
         if request then
             request({
-                Url = webhookUrl,
+                Url = CONFIG.WebhookURL,
                 Method = "POST",
                 Headers = {["Content-Type"] = "application/json"},
                 Body = jsonData
             })
         else
-            HttpService:PostAsync(webhookUrl, jsonData, Enum.HttpContentType.ApplicationJson)
+            HttpService:PostAsync(CONFIG.WebhookURL, jsonData, Enum.HttpContentType.ApplicationJson)
         end
     end)
 end
@@ -68,7 +76,7 @@ sendUpdate()
 
 task.spawn(function()
     while true do
-        task.wait(60)
+        task.wait(CONFIG.UpdateInterval)
         sendUpdate()
     end
 end)
