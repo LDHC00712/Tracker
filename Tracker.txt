@@ -1,0 +1,74 @@
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local MarketplaceService = game:GetService("MarketplaceService")
+local LocalPlayer = Players.LocalPlayer
+
+local webhookUrl = "https://08cb8c04f339.ngrok-free.app/track"
+
+local function getCash()
+    local cash = 0
+    pcall(function()
+        local df = LocalPlayer:WaitForChild("DataFolder", 10)
+        local currency = df:WaitForChild("Currency", 10)
+        cash = currency.Value
+    end)
+    return cash
+end
+
+local altName = LocalPlayer.Name
+local gameName = "Unknown"
+pcall(function()
+    gameName = MarketplaceService:GetProductInfo(game.PlaceId).Name
+end)
+
+local initialCash = getCash()
+local cash10MinAgo = initialCash
+local last10Min = os.time()
+
+local function sendUpdate()
+    local currentCash = getCash()
+    local now = os.time()
+
+    if now - last10Min >= 600 then
+        cash10MinAgo = currentCash
+        last10Min = now
+    end
+
+    local earnedCash = currentCash - initialCash
+    local gain10Min = currentCash - cash10MinAgo
+    local farmStatus = (gain10Min >= 10000) and "✅" or "❌"
+
+    local data = {
+        name = altName,
+        game = gameName,
+        currentCash = currentCash,
+        initialCash = initialCash,
+        earnedCash = earnedCash,
+        timestamp = os.date("%Y-%m-%d %H:%M:%S"),
+        farm = farmStatus
+    }
+
+    local jsonData = HttpService:JSONEncode(data)
+
+    pcall(function()
+        if request then
+            request({
+                Url = webhookUrl,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = jsonData
+            })
+        else
+            HttpService:PostAsync(webhookUrl, jsonData, Enum.HttpContentType.ApplicationJson)
+        end
+    end)
+end
+
+sendUpdate()
+
+task.spawn(function()
+    while true do
+        task.wait(60)
+        sendUpdate()
+    end
+end)
