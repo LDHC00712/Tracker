@@ -37,13 +37,13 @@ local function sendUpdate()
     local currentCash = getCash()
     local now = os.time()
 
-    -- อัปเดตเงินเก่า cash10MinAgo ทุก FarmInterval วิ
+    -- อัปเดต cash10MinAgo ทุก FarmInterval วิ
     if now - last10Min >= CONFIG.FarmInterval then
         cash10MinAgo = currentCash
         last10Min = now
     end
 
-    local earnedCash = currentCash - initialCash -- เงินฟาร์ม คำนวณใหม่ทุกครั้งจากฐาน initialCash
+    local earnedCash = currentCash - initialCash -- เงินฟาร์ม คำนวณจากฐาน initialCash
     local gain10Min = currentCash - cash10MinAgo
     local farmStatus = (gain10Min >= CONFIG.FarmThreshold) and "✅" or "❌"
 
@@ -51,7 +51,7 @@ local function sendUpdate()
         name = altName,
         game = gameName,
         currentCash = currentCash,
-        initialCash = initialCash,
+        initialCash = initialCash,  -- ส่ง initialCash เพื่อรีเซ็ตฝั่ง server
         earnedCash = earnedCash,
         timestamp = os.date("%Y-%m-%d %H:%M:%S"),
         farm = farmStatus
@@ -79,7 +79,7 @@ local function sendUpdate()
     end
 end
 
--- เรียกส่งข้อมูลพร้อม log ตอนเริ่มสคริปต์
+-- ส่งข้อมูลตอนเริ่มสคริปต์ (รีเซ็ตค่าเริ่มต้น)
 sendUpdate()
 
 -- ส่งข้อมูลซ้ำทุก UpdateInterval วิ (ไม่มี log)
