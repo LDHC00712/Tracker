@@ -80,7 +80,7 @@ local function sendUpdate()
 end
 
 -- เรียกส่งข้อมูลพร้อม log ตอนเริ่มสคริปต์
-sendUpdateOnce()
+sendUpdate()
 
 -- ส่งข้อมูลซ้ำทุก UpdateInterval วิ (ไม่มี log)
 task.spawn(function()
