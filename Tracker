@@ -1,9 +1,9 @@
 -- // ✅ CONFIG ==============================
 local CONFIG = {
     WebhookURL = "https://08cb8c04f339.ngrok-free.app/track", -- แก้ URL webhook ที่นี่
-    UpdateInterval = 60, -- หน่วยเป็นวินาที (เช่น ส่งทุก 60 วินาที)
-    FarmInterval = 600, -- ระยะเวลาเช็ค farm 10 นาที = 600 วินาที
-    FarmThreshold = 10000, -- ฟาร์มขั้นต่ำในช่วง 10 นาที เพื่อถือว่า "✅"
+    UpdateInterval = 60, -- หน่วยเป็นวินาที (ส่งข้อมูลทุก 60 วิ)
+    FarmInterval = 600, -- เช็คสถานะ farm ทุก 10 นาที (600 วิ)
+    FarmThreshold = 10000, -- เงินเพิ่มขั้นต่ำในช่วง FarmInterval เพื่อถือว่า "✅"
 }
 -- // =======================================
 
@@ -22,27 +22,28 @@ local function getCash()
     return cash
 end
 
+-- รีเซ็ตเงินเริ่มต้นทุกครั้งที่โหลดสคริปต์ใหม่
+local initialCash = getCash()
+local cash10MinAgo = initialCash
+local last10Min = os.time()
+
 local altName = LocalPlayer.Name
 local gameName = "Unknown"
 pcall(function()
     gameName = MarketplaceService:GetProductInfo(game.PlaceId).Name
 end)
 
-local initialCash = getCash()
-local cash10MinAgo = initialCash
-local last10Min = os.time()
-
 local function sendUpdate()
     local currentCash = getCash()
     local now = os.time()
 
-    -- อัปเดตค่าล่าสุดทุก CONFIG.FarmInterval วินาที
+    -- อัปเดตเงินเก่า cash10MinAgo ทุก FarmInterval วิ
     if now - last10Min >= CONFIG.FarmInterval then
         cash10MinAgo = currentCash
         last10Min = now
     end
 
-    local earnedCash = currentCash - initialCash
+    local earnedCash = currentCash - initialCash -- เงินฟาร์ม คำนวณใหม่ทุกครั้งจากฐาน initialCash
     local gain10Min = currentCash - cash10MinAgo
     local farmStatus = (gain10Min >= CONFIG.FarmThreshold) and "✅" or "❌"
 
@@ -58,7 +59,7 @@ local function sendUpdate()
 
     local jsonData = HttpService:JSONEncode(data)
 
-    pcall(function()
+    local success, err = pcall(function()
         if request then
             request({
                 Url = CONFIG.WebhookURL,
@@ -70,10 +71,18 @@ local function sendUpdate()
             HttpService:PostAsync(CONFIG.WebhookURL, jsonData, Enum.HttpContentType.ApplicationJson)
         end
     end)
+
+    if success then
+        print(string.format("[AltTracker] ✅ Sent at %s | Farm: %s | Earned: %d", data.timestamp, farmStatus, earnedCash))
+    else
+        warn("[AltTracker] ❌ Failed to send webhook:", err)
+    end
 end
 
+-- ส่งข้อมูลตอนเริ่มสคริปต์
 sendUpdate()
 
+-- ส่งข้อมูลซ้ำทุก UpdateInterval วิ
 task.spawn(function()
     while true do
         task.wait(CONFIG.UpdateInterval)
