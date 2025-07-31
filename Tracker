@@ -1,6 +1,6 @@
 -- // ✅ CONFIG ==============================
 local CONFIG = {
-    WebhookURL = "https://938732b6f43d.ngrok-free.app", -- เปลี่ยน URL เป็นของคุณ
+    WebhookURL = "https://938732b6f43d.ngrok-free.app/track", -- เปลี่ยน URL เป็นของคุณ
     UpdateInterval = 60, -- ส่งข้อมูลทุก 60 วิ
     FarmInterval = 600, -- เช็คสถานะ farm ทุก 10 นาที (600 วิ)
     FarmThreshold = 10000, -- เงินเพิ่มขั้นต่ำเพื่อถือว่า ✅
