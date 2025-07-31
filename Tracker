@@ -72,10 +72,17 @@ local function sendUpdate()
         end
     end)
 
--- ส่งข้อมูลตอนเริ่มสคริปต์
-sendUpdate()
+    if success then
+        print("[AltTracker] ✅ Initial update sent successfully!")
+    else
+        warn("[AltTracker] ❌ Failed to send initial update:", err)
+    end
+end
 
--- ส่งข้อมูลซ้ำทุก UpdateInterval วิ
+-- เรียกส่งข้อมูลพร้อม log ตอนเริ่มสคริปต์
+sendUpdateOnce()
+
+-- ส่งข้อมูลซ้ำทุก UpdateInterval วิ (ไม่มี log)
 task.spawn(function()
     while true do
         task.wait(CONFIG.UpdateInterval)
