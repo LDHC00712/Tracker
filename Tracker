@@ -72,13 +72,6 @@ local function sendUpdate()
         end
     end)
 
-    if success then
-        print(string.format("[AltTracker] ✅ Sent at %s | Farm: %s | Earned: %d", data.timestamp, farmStatus, earnedCash))
-    else
-        warn("[AltTracker] ❌ Failed to send webhook:", err)
-    end
-end
-
 -- ส่งข้อมูลตอนเริ่มสคริปต์
 sendUpdate()
 
