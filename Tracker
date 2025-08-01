@@ -1,11 +1,11 @@
 -- // ✅ CONFIG ==============================
 local CONFIG = {
-    WebhookURL = "https://938732b6f43d.ngrok-free.app/track", -- เปลี่ยน URL เป็นของคุณ
-    UpdateInterval = 60, -- ส่งข้อมูลทุก 60 วิ
+    WebhookURL = "https://61f07d6b6638.ngrok-free.app/track", -- แก้ URL webhook ที่นี่
+    UpdateInterval = 60, -- หน่วยเป็นวินาที (ส่งข้อมูลทุก 60 วิ)
     FarmInterval = 600, -- เช็คสถานะ farm ทุก 10 นาที (600 วิ)
-    FarmThreshold = 10000, -- เงินเพิ่มขั้นต่ำเพื่อถือว่า ✅
+    FarmThreshold = 10000, -- เงินเพิ่มขั้นต่ำในช่วง FarmInterval เพื่อถือว่า "✅"
 }
--- // ========================================
+-- // =======================================
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -22,6 +22,11 @@ local function getCash()
     return cash
 end
 
+-- รีเซ็ตเงินเริ่มต้นทุกครั้งที่โหลดสคริปต์ใหม่
+local initialCash = getCash()
+local cash10MinAgo = initialCash
+local last10Min = os.time()
+
 local altName = LocalPlayer.Name
 local gameName = "Unknown"
 pcall(function()
@@ -30,13 +35,26 @@ end)
 
 local function sendUpdate()
     local currentCash = getCash()
-    
-    -- ส่งข้อมูลแค่ชื่อ เงินปัจจุบัน สถานะ farm จาก client (farm จริงๆ ให้ server คำนวณ)
+    local now = os.time()
+
+    -- อัปเดต cash10MinAgo ทุก FarmInterval วิ
+    if now - last10Min >= CONFIG.FarmInterval then
+        cash10MinAgo = currentCash
+        last10Min = now
+    end
+
+    local earnedCash = currentCash - initialCash -- เงินฟาร์ม คำนวณจากฐาน initialCash
+    local gain10Min = currentCash - cash10MinAgo
+    local farmStatus = (gain10Min >= CONFIG.FarmThreshold) and "✅" or "❌"
+
     local data = {
         name = altName,
         game = gameName,
         currentCash = currentCash,
+        initialCash = initialCash,  -- ส่ง initialCash เพื่อรีเซ็ตฝั่ง server
+        earnedCash = earnedCash,
         timestamp = os.date("%Y-%m-%d %H:%M:%S"),
+        farm = farmStatus
     }
 
     local jsonData = HttpService:JSONEncode(data)
@@ -55,16 +73,16 @@ local function sendUpdate()
     end)
 
     if success then
-        print("[AltTracker] ✅ Update sent successfully!")
+        print("[AltTracker] ✅ Initial update sent successfully!")
     else
-        warn("[AltTracker] ❌ Failed to send update:", err)
+        warn("[AltTracker] ❌ Failed to send initial update:", err)
     end
 end
 
--- ส่งข้อมูลตอนเริ่มสคริปต์
+-- ส่งข้อมูลตอนเริ่มสคริปต์ (รีเซ็ตค่าเริ่มต้น)
 sendUpdate()
 
--- ส่งข้อมูลซ้ำทุก UpdateInterval วิ
+-- ส่งข้อมูลซ้ำทุก UpdateInterval วิ (ไม่มี log)
 task.spawn(function()
     while true do
         task.wait(CONFIG.UpdateInterval)
