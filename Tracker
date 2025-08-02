@@ -26,6 +26,7 @@ end
 local initialCash = getCash()
 local cash10MinAgo = initialCash
 local last10Min = os.time()
+local farmStatus = "❌" -- เก็บสถานะฟาร์มของรอบ 10 นาทีล่าสุด
 
 local altName = LocalPlayer.Name
 local gameName = "Unknown"
@@ -33,19 +34,29 @@ pcall(function()
     gameName = MarketplaceService:GetProductInfo(game.PlaceId).Name
 end)
 
+local function checkFarmStatus()
+    local currentCash = getCash()
+    local gain10Min = currentCash - cash10MinAgo
+    if gain10Min >= CONFIG.FarmThreshold then
+        farmStatus = "✅"
+    else
+        farmStatus = "❌"
+    end
+    -- รีเซ็ตฐานการนับรอบถัดไป
+    cash10MinAgo = currentCash
+    last10Min = os.time()
+end
+
 local function sendUpdate()
     local currentCash = getCash()
     local now = os.time()
 
-    -- อัปเดต cash10MinAgo ทุก FarmInterval วิ
+    -- เช็คและอัปเดต farmStatus ทุก FarmInterval วิ
     if now - last10Min >= CONFIG.FarmInterval then
-        cash10MinAgo = currentCash
-        last10Min = now
+        checkFarmStatus()
     end
 
     local earnedCash = currentCash - initialCash -- เงินฟาร์ม คำนวณจากฐาน initialCash
-    local gain10Min = currentCash - cash10MinAgo
-    local farmStatus = (gain10Min >= CONFIG.FarmThreshold) and "✅" or "❌"
 
     local data = {
         name = altName,
@@ -73,9 +84,9 @@ local function sendUpdate()
     end)
 
     if success then
-        print("[AltTracker] ✅ Initial update sent successfully!")
+        print("[AltTracker] ✅ Update sent successfully!")
     else
-        warn("[AltTracker] ❌ Failed to send initial update:", err)
+        warn("[AltTracker] ❌ Failed to send update:", err)
     end
 end
 
@@ -89,5 +100,3 @@ task.spawn(function()
         sendUpdate()
     end
 end)
-
-
