@@ -24,6 +24,7 @@ end
 
 -- รีเซ็ตเงินเริ่มต้นทุกครั้งที่โหลดสคริปต์ใหม่
 local initialCash = getCash()
+local initialCashTime = os.time() -- เพิ่ม timestamp ตอนเริ่มฟาร์ม
 local cash10MinAgo = initialCash
 local last10Min = os.time()
 local farmStatus = "❌" -- เก็บสถานะฟาร์มของรอบ 10 นาทีล่าสุด
@@ -62,8 +63,9 @@ local function sendUpdate()
         name = altName,
         game = gameName,
         currentCash = currentCash,
-        initialCash = initialCash,  -- ส่ง initialCash เพื่อรีเซ็ตฝั่ง server
+        initialCash = initialCash,
         earnedCash = earnedCash,
+        farmStartAt = initialCashTime, -- ส่ง timestamp ตอนเริ่มฟาร์ม
         timestamp = os.date("%Y-%m-%d %H:%M:%S"),
         farm = farmStatus
     }
